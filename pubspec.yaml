@@ -12,8 +12,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   timeago_flutter: ^3.7.0
   image_picker: ^1.1.2
-  location: ^5.0.0
   supabase_flutter: ^1.10.25
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.3
+  location: ^6.0.2
+  timeago: ^3.6.1
 
 dependency_overrides:
   sign_in_with_apple: ^6.1.1  # Use a newer compatible version

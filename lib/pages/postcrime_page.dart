@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:location/location.dart';
 import '../widgets/bottom_nav.dart';
+import '../services/supabase_service.dart'; // Import the service
 
 class PostCrimePage extends StatefulWidget {
   const PostCrimePage({super.key});
@@ -12,6 +13,7 @@ class PostCrimePage extends StatefulWidget {
 }
 
 class _PostCrimePageState extends State<PostCrimePage> {
+  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   File? _selectedImage;
   LocationData? _location;
@@ -46,9 +48,19 @@ class _PostCrimePageState extends State<PostCrimePage> {
   }
 
   void _submitPost() async {
+    // Validate input
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add a title for your report.')),
+      );
+      return;
+    }
+
     if (_descriptionController.text.trim().isEmpty && _selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add a description or photo before submitting.')),
+        const SnackBar(
+          content: Text('Please add a description or photo before submitting.'),
+        ),
       );
       return;
     }
@@ -56,23 +68,52 @@ class _PostCrimePageState extends State<PostCrimePage> {
     setState(() => _isPosting = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
+      // Create post using Supabase service
+      final result = await SupabaseService.createPost(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        latitude: _location?.latitude,
+        longitude: _location?.longitude,
+        imageFile: _selectedImage,
+      );
 
-      setState(() {
-        _descriptionController.clear();
-        _selectedImage = null;
-        _location = null;
-      });
+      if (result != null) {
+        // Clear form on success
+        setState(() {
+          _titleController.clear();
+          _descriptionController.clear();
+          _selectedImage = null;
+          _location = null;
+        });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted successfully!')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Report submitted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate back to dashboard to see the new post
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to submit report. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error submitting report: $e')),
+          SnackBar(
+            content: Text('Error submitting report: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -118,7 +159,7 @@ class _PostCrimePageState extends State<PostCrimePage> {
         backgroundColor: isDark ? Colors.grey[900] : Colors.white,
         elevation: 0,
         title: Text(
-          'Post Crimes',
+          'Report Crime',
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black,
             fontWeight: FontWeight.bold,
@@ -129,180 +170,208 @@ class _PostCrimePageState extends State<PostCrimePage> {
       ),
       backgroundColor: isDark ? Colors.grey[900] : Colors.grey[100],
       body: SingleChildScrollView(
-  padding: const EdgeInsets.all(16),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // User avatar + header
-      Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage:
-                const NetworkImage('https://i.pravatar.cc/150?img=12'),
-            backgroundColor: Colors.transparent,
-          ),
-          const SizedBox(width: 16),
-          Text(
-            'Tell us what happened',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // User avatar + header
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundImage: const NetworkImage(
+                    'https://i.pravatar.cc/150?img=12',
+                  ),
+                  backgroundColor: Colors.transparent,
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Tell us what happened',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-      // Unified input card
-      Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 2,
-        color: isDark ? Colors.grey[800] : Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Description field
-              TextField(
-                controller: _descriptionController,
-                minLines: 5,
-                maxLines: 10,
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontSize: 16,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Describe what happened...',
-                  hintStyle: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.grey[400],
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: isDark ? Colors.white24 : Colors.grey[300]!,
-                    ),
-                  ),
-                ),
+            // Unified input card
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 16),
-
-              // Image preview (if any)
-              if (_selectedImage != null)
-                Stack(
+              elevation: 2,
+              color: isDark ? Colors.grey[800] : Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        _selectedImage!,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
+                    // Title field
+                    TextField(
+                      controller: _titleController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedImage = null),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
+                      decoration: InputDecoration(
+                        hintText: 'Title (e.g., Suspicious Activity)',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white54 : Colors.grey[400],
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white24 : Colors.grey[300]!,
                           ),
-                          padding: const EdgeInsets.all(6),
-                          child: const Icon(Icons.close, color: Colors.white),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                    const SizedBox(height: 16),
 
-              if (_selectedImage != null) const SizedBox(height: 16),
-
-              // Location info
-              Row(
-                children: [
-                  const Icon(Icons.location_on, color: Colors.red),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _location != null
-                          ? 'Lat: ${_location!.latitude?.toStringAsFixed(4)}, Lng: ${_location!.longitude?.toStringAsFixed(4)}'
-                          : 'Location not tagged',
+                    // Description field
+                    TextField(
+                      controller: _descriptionController,
+                      minLines: 5,
+                      maxLines: 10,
                       style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 16,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Describe what happened in detail...',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white54 : Colors.grey[400],
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white24 : Colors.grey[300]!,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _getLocation,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Update'),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+
+                    // Image preview (if any)
+                    if (_selectedImage != null)
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _selectedImage!,
+                              height: 200,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap:
+                                  () => setState(() => _selectedImage = null),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(6),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    if (_selectedImage != null) const SizedBox(height: 16),
+
+                    // Location info
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _location != null
+                                ? 'Lat: ${_location!.latitude?.toStringAsFixed(4)}, Lng: ${_location!.longitude?.toStringAsFixed(4)}'
+                                : 'Location not tagged',
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : Colors.grey[800],
+                            ),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _getLocation,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Update'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Action buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _PostActionButton(
+                          icon: Icons.photo,
+                          label: 'Add Photo',
+                          color: primaryColor,
+                          onTap: _pickImage,
+                        ),
+                        _PostActionButton(
+                          icon: Icons.location_on,
+                          label: 'Tag Location',
+                          color: primaryColor,
+                          onTap: _getLocation,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-
-              // Action buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _PostActionButton(
-                    icon: Icons.photo,
-                    label: 'Add Photo',
-                    color: primaryColor,
-                    onTap: _pickImage,
-                  ),
-                  _PostActionButton(
-                    icon: Icons.location_on,
-                    label: 'Tag Location',
-                    color: primaryColor,
-                    onTap: _getLocation,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      const SizedBox(height: 30),
-
-      // Submit button
-      SizedBox(
-        height: 50,
-        child: ElevatedButton.icon(
-          onPressed: _isPosting ? null : _submitPost,
-          icon: _isPosting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.send),
-          label: Text(
-            _isPosting ? 'Submitting...' : 'Submit Report',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
             ),
-          ),
+
+            const SizedBox(height: 30),
+
+            // Submit button
+            SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _isPosting ? null : _submitPost,
+                icon:
+                    _isPosting
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Icon(Icons.send),
+                label: Text(
+                  _isPosting ? 'Submitting...' : 'Submit Report',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    ],
-  ),
-),
-
       bottomNavigationBar: BottomNav(
         currentIndex: _currentIndex,
         onTabSelected: _onTabSelected,
@@ -343,7 +412,10 @@ class _PostActionButton extends StatelessWidget {
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 6),
-          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

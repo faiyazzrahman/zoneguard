@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,41 +11,44 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _identifierController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   String? _error;
 
   void _handleLogin() async {
-  setState(() {
-    _isLoading = true;
-    _error = null;
-  });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-  final email = _identifierController.text.trim();
-  final password = _passwordController.text;
+    final email = _identifierController.text.trim();
+    final password = _passwordController.text;
 
-  try {
-    final response = await Supabase.instance.client.auth
-        .signInWithPassword(email: email, password: password);
+    try {
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
-    if (response.user != null) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } else {
+      if (userCredential.user != null) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
+        setState(() {
+          _error = 'Login failed. Please check your credentials.';
+        });
+      }
+    } on FirebaseAuthException catch (e) {
       setState(() {
-        _error = 'Login failed. Please check your credentials.';
+        _error = e.message ?? 'An error occurred';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Unexpected error: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
-  } catch (e) {
-    setState(() {
-      _error = e.toString();
-    });
-  } finally {
-    setState(() {
-      _isLoading = false;
-    });
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -76,16 +79,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 48),
 
-                // Email/Username field
                 _buildTextField(
                   controller: _identifierController,
-                  hint: "Email or Username",
+                  hint: "Email",
                   icon: Icons.email_outlined,
                   obscure: false,
                 ),
                 const SizedBox(height: 16),
 
-                // Password field
                 _buildTextField(
                   controller: _passwordController,
                   hint: "Password",
@@ -104,7 +105,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 24),
 
-                // Login Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
@@ -119,20 +119,22 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     elevation: 6,
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Color(0xFF3A7BD5))
-                      : const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(
+                            color: Color(0xFF3A7BD5),
+                          )
+                          : const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
                 ),
 
                 const SizedBox(height: 20),
 
-                // Divider with OR text
                 Row(
                   children: const [
                     Expanded(child: Divider(color: Colors.white54)),
@@ -148,10 +150,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Google login button (placeholder)
                 OutlinedButton.icon(
                   onPressed: () {
-                    // Placeholder for Google login
+                    // Placeholder for Google login integration
                   },
                   icon: const Icon(Icons.g_mobiledata, color: Colors.white),
                   label: const Text(
@@ -172,7 +173,6 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 24),
 
-                // Sign up prompt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
