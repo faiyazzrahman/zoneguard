@@ -12,14 +12,20 @@ dependencies:
   cupertino_icons: ^1.0.8
   timeago_flutter: ^3.7.0
   image_picker: ^1.1.2
+  uuid: ^3.0.7  
   supabase_flutter: ^1.10.25
+  geocoding: ^4.0.0
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.3
   location: ^6.0.2
   timeago: ^3.6.1
+  # OSM Map Dependencies
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
+  http: ^1.1.0
 
 dependency_overrides:
-  sign_in_with_apple: ^6.1.1  # Use a newer compatible version
+  sign_in_with_apple: ^6.1.1
 
 dev_dependencies:
   flutter_test:
