@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
-//import 'pages/dashboard_page.dart';
+import 'pages/dashboard_page.dart';
 import 'pages/map_page.dart';
-//import 'pages/postcrime_page.dart';
+import 'pages/postcrime_page.dart';
 import 'pages/inbox_page.dart';
 import 'pages/settings_page.dart';
 
@@ -13,14 +13,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'zone_guard',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: LoginPage(),
+      home: LoginPage(), // Default to LoginPage since we removed Firebase auth
       routes: {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignupPage(),
-        //'/dashboard': (context) => DashboardPage(),
-        //'/map': (context) => MapPage(),
-        //'/post': (context) => PostCrimePage(),
-        //'/inbox': (context) => InboxPage(),
+        '/dashboard': (context) => DashboardPage(),
+        '/map': (context) => MapPage(),
+        '/post': (context) => PostCrimePage(),
+        '/inbox': (context) => InboxPage(),
         '/settings': (context) => SettingsPage(),
       },
     );

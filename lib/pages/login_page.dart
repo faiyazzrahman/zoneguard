@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/supabase_service.dart'; // Adjust the import path as needed
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,150 +11,41 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _identifierController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  final SupabaseService _supabaseService = SupabaseService();
+  
   bool _isLoading = false;
   String? _error;
-  bool _showForgotPassword = false;
 
   void _handleLogin() async {
-    final identifier = _identifierController.text.trim();
-    final password = _passwordController.text;
+  setState(() {
+    _isLoading = true;
+    _error = null;
+  });
 
-    // Validation
-    if (identifier.isEmpty || password.isEmpty) {
+  final email = _identifierController.text.trim();
+  final password = _passwordController.text;
+
+  try {
+    final response = await Supabase.instance.client.auth
+        .signInWithPassword(email: email, password: password);
+
+    if (response.user != null) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
       setState(() {
-        _error = "Please fill in all fields";
+        _error = 'Login failed. Please check your credentials.';
       });
-      return;
     }
-
+  } catch (e) {
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _error = e.toString();
     });
-
-    try {
-      final response = await _supabaseService.loginUser(
-        emailOrUsername: identifier,
-        password: password,
-      );
-
-      if (response.user != null) {
-        if (mounted) {
-          // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Welcome back!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-
-          // Navigate to dashboard
-          Navigator.pushReplacementNamed(context, '/dashboard');
-        }
-      } else {
-        setState(() {
-          _error = 'Login failed. Please check your credentials.';
-        });
-      }
-    } on AuthException catch (e) {
-      setState(() {
-        _error = e.message;
-        // Show forgot password option for certain errors
-        _showForgotPassword =
-            e.message?.toLowerCase().contains('password') == true ||
-            e.message?.toLowerCase().contains('invalid') == true;
-      });
-    } catch (e) {
-      setState(() {
-        String errorMessage = e.toString();
-
-        // Handle specific error cases
-        if (errorMessage.contains('Username not found')) {
-          _error =
-              "Username not found. Please check your username or use your email address.";
-        } else if (errorMessage.contains('Invalid login credentials')) {
-          _error = "Invalid email/username or password. Please try again.";
-        } else if (errorMessage.contains('Email not confirmed')) {
-          _error = "Please verify your email address before logging in.";
-        } else if (errorMessage.contains('Too many requests')) {
-          _error = "Too many login attempts. Please try again later.";
-        } else {
-          _error = 'Login failed. Please check your credentials and try again.';
-        }
-
-        _showForgotPassword = true;
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
 
-  void _handleForgotPassword() async {
-    final identifier = _identifierController.text.trim();
-
-    if (identifier.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email address first'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // If identifier is not an email, show message
-    if (!identifier.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email address to reset password'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    try {
-      await _supabaseService.resetPassword(identifier);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password reset email sent! Check your inbox.'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-
-        setState(() {
-          _showForgotPassword = false;
-          _error = null;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send reset email: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _identifierController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,25 +74,18 @@ class _LoginPageState extends State<LoginPage> {
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Welcome back! Sign in to continue',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
                 const SizedBox(height: 48),
 
+                // Email/Username field
                 _buildTextField(
                   controller: _identifierController,
                   hint: "Email or Username",
-                  icon: Icons.person_outline,
+                  icon: Icons.email_outlined,
                   obscure: false,
-                  keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
 
+                // Password field
                 _buildTextField(
                   controller: _passwordController,
                   hint: "Password",
@@ -212,54 +95,16 @@ class _LoginPageState extends State<LoginPage> {
 
                 if (_error != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                if (_showForgotPassword)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: TextButton(
-                      onPressed: _handleForgotPassword,
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
 
                 const SizedBox(height: 24),
 
+                // Login Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
@@ -274,27 +119,20 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     elevation: 6,
                   ),
-                  child:
-                      _isLoading
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF3A7BD5),
-                              strokeWidth: 2,
-                            ),
-                          )
-                          : const Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Color(0xFF3A7BD5))
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
                 ),
 
                 const SizedBox(height: 20),
 
+                // Divider with OR text
                 Row(
                   children: const [
                     Expanded(child: Divider(color: Colors.white54)),
@@ -310,15 +148,10 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
 
+                // Google login button (placeholder)
                 OutlinedButton.icon(
                   onPressed: () {
-                    // Placeholder for Google login integration
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Google login coming soon!'),
-                        backgroundColor: Colors.blue,
-                      ),
-                    );
+                    // Placeholder for Google login
                   },
                   icon: const Icon(Icons.g_mobiledata, color: Colors.white),
                   label: const Text(
@@ -339,6 +172,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 24),
 
+                // Sign up prompt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -358,21 +192,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // Help text
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    'You can login with either your email address or username',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -386,7 +205,6 @@ class _LoginPageState extends State<LoginPage> {
     required String hint,
     required IconData icon,
     required bool obscure,
-    TextInputType? keyboardType,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -399,7 +217,6 @@ class _LoginPageState extends State<LoginPage> {
       child: TextField(
         controller: controller,
         obscureText: obscure,
-        keyboardType: keyboardType,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hint,
