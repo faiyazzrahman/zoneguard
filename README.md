@@ -1,13 +1,9 @@
-Here’s a well-structured and engaging `README.md` for your **Zone Guard** project. This version is ideal for GitHub and suitable for showcasing to recruiters, collaborators, or supervisors.
 
----
-
-````markdown
 # 🚨 Zone Guard
 
 Zone Guard is a community-driven crime reporting mobile application built with **Flutter** and powered by **Supabase**. It enables users to stay informed, report incidents, and contribute to safer neighborhoods through real-time location-based crime data.
 
-![Zone Guard Banner](https://your-image-link-here.com) <!-- (Optional: Add a cool banner) -->
+
 
 ---
 
@@ -32,7 +28,7 @@ Zone Guard is a community-driven crime reporting mobile application built with *
 
 | Frontend | Backend | Other |
 |----------|---------|-------|
-| Flutter  | Supabase (Auth, DB, Storage) | Google Maps API |
+| Flutter  | Supabase (Auth, DB, Storage) | OSM API |
 | Dart     | PostgreSQL (via Supabase)   | GeoLocation      |
 
 ---
@@ -48,7 +44,7 @@ Zone Guard is a community-driven crime reporting mobile application built with *
 ### Clone the repo
 
 ```bash
-git clone https://github.com/your-username/zoneguard.git
+git clone https://github.com/faiyazzrahman/zoneguard.git
 cd zoneguard
 ````
 
@@ -132,8 +128,8 @@ Contributions are welcome! Here's how you can help:
 
 **Md Faiyazur Rahman**
 Specializing in UI/UX Design • Full-Stack Development • Mobile Apps
-📫 [Connect on LinkedIn](https://linkedin.com/in/your-profile)
-🌐 [My GitHub](https://github.com/your-username)
+📫 [Connect on LinkedIn](https://linkedin.com/in/faiyazzrahman)
+🌐 [My GitHub](https://github.com/faiyazzrahman)
 
 ---
 
@@ -142,15 +138,3 @@ Specializing in UI/UX Design • Full-Stack Development • Mobile Apps
 
 ```
 
----
-
-### ✅ To Finalize:
-1. Replace placeholders like:
-   - `your-username`
-   - `your-project.supabase.co`
-   - `public-anon-key`
-   - Any image/banner links (optional but great for presentation)
-2. Add a `LICENSE` file if you want open-source credibility.
-
-Would you like me to generate a Markdown `.md` file ready for upload?
-```
