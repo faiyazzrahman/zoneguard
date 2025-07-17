@@ -83,17 +83,24 @@ const supabaseKey = 'public-anon-key';
 
 ```
 lib/
-├── auth/
-├── components/
 ├── models/
+│   └── crime_category.dart           # Model for categorizing crimes
 ├── pages/
-│   ├── HomePage.dart
-│   ├── PostCrimePage.dart
-│   ├── InboxPage.dart
-│   ├── SettingsPage.dart
+│   ├── dashboard_page.dart           # Home/dashboard with key data
+│   ├── inbox_page.dart               # View notifications and reports
+│   ├── login_page.dart               # User login screen
+│   ├── map_page.dart                 # Interactive map of incidents
+│   ├── postcrime_page.dart           # Create new crime report
+│   ├── settings_page.dart            # App preferences & logout
+│   └── signup_page.dart              # User registration screen
 ├── services/
-├── supabase_config.dart
-└── main.dart
+│   ├── auth_service.dart             # Supabase Auth logic
+│   └── supabase_service.dart         # Supabase DB/storage interaction
+├── widgets/
+│   └── bottom_nav.dart               # Bottom navigation bar UI
+├── app.dart                          # App theme and route setup
+├── main.dart                         # App entry point
+└── schema.txt                        # Supabase DB schema reference
 ```
 
 ---
